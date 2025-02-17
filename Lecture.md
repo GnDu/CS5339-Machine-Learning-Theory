@@ -96,3 +96,90 @@
     - Bad: Really long time to converge
 - Compromise: Mini-batch SGD
   - $\theta^{k+1} = \theta^k - \alpha [\frac{1}{I} \sum_{i\in I}\nabla f_i(\theta^{k})]$ for index set $I$
+
+# Lecure 2
+
+## Stochastic Gradient descent (more)
+
+- Newton method (local search)
+- Because it's taylor approximation at current point
+- Get stuck at local minimum (we kinda know this)
+- Locally it's the best solution but not globally
+- Why not global search?
+  - We can use grid search or bisection
+  - Bayesian optimization using guaissian process
+  - But does not scale to high dimensional problem where $\theta \in D$
+    - Basically when dimension is huge
+    - For example grid search, using 17 points. Scale to $17^d$ (exponentially increase!). Fundamental problem
+- Global seach vs local search.
+  - Local search: good for scaling, bad because local min (use this for train)
+  - global search: good for global min, bad for scaling  (use this for hyperparameter tuning)
+- How to avoid local min issue:
+  - a family of problem that does not have this issue - convex optimisation
+  - If you formulate problem as a convex optimisation, then we can scale well and avoid local min (because there is only one min)
+  - For non-convx:
+    - over-parameterization
+    - skip connection
+    - focus on this!
+
+## Convex Optimisation
+
+- Convex sets: Let $D \in \mathbb{R}^d$.
+  - $D$ is a convex set if $\forall a,b\in D, \lambda a + (1-\lambda)b \in D, \forall \lambda \in [0,1]$
+  - For example two points in a circle are in convex set because it's line ($ \lambda a + (1-\lambda)b$) will always be in the the set.
+    - Non-convex set: Doughnuts, regular polygon with notches
+  - $\lambda a + (1-\lambda)b \in D, \forall \lambda \in [0,1]$ is known as convex combination of $a$ and $b$. 
+    - Note, not the same as linear combination ($\lambda _1 a + \lambda_{2} b $)
+      - because linear combination covers all the space. Convex combination is a subset of it.
+- Convex Function:
+  - $f: D\rightarrow \mathbb{R}$ is a convex function for all $a$ and $b$:
+    - $f(\lambda a + (1-\lambda)b) \lt \lambda f(a) + (1-\lambda)f(b)$ where $D$ is a convex set 
+    - if $D$ is not convex, then LHS is undefined.
+    - $f(\lambda a + (1-\lambda)b)$ - defines the function along the line segment between $a$ and $b$.
+    - $\lambda f(a) + (1-\lambda)f(b)$ - defines the line segment between $f(a)$ and $f(b)$
+    - If $D$ is convex set, then $\lambda f(a) + (1-\lambda)f(b)$ is bounded by $f(\lambda a + (1-\lambda)b)$
+    - How do you define this beyond $d>2$?
+- Epigraph(f) = $\{ (\theta, \beta) \| f(\theta)\lt\beta\}$
+- $f$ is convex iff epigraph(f) is convex (as a set)
+  - This allows us to define whether a function is a convex function by using sets. 
+  - Every local minimum of $f$ is a global minimum for $f$ if it exists
+- Proof that there can only be one global minimum in a convex function $D$
+  - Defintition: $\theta$ is local min of $f$ iff $\exists \epsilon >0$ s.t:
+    - $f(\theta)\leq f(\hat{\theta})$
+    - $\forall\hat{\theta}\in D \cap\beta_{\epsilon}(\theta)$ where 
+    - $\beta_{\epsilon}(\theta)=\{\hat{\theta}\vert\ \lvert\lvert \theta - \hat{\theta} \rvert\rvert \leq \epsilon \}$
+    - $\beta_{\epsilon}(\theta)$ is basically an interval around $\theta$
+      - $\{\hat{\theta}\vert \rvert \theta - \hat{\theta} \lvert \leq \epsilon \}\rightarrow$ this means the range around $\epsilon$
+  - Defintition: $\theta$ is a global minimum of $f:D\in\mathbb{R}^d\rightarrow \mathbb{R}$ iff $f(\theta)\leq f(\hat{\theta}),\ \forall \hat{\theta} \in D$
+    - Note, the lack of $\beta_{\epsilon}(\theta)$. Basically, we are expanding the definition to the whole of $D$ instead of just the interval.
+  - Proof:
+    - Let $\theta$ be a local min $f$
+    - That means $\exists \epsilon >0$ s.t $\forall \hat{\theta}\in D$
+    - $f(\theta)\leq f(\theta + \epsilon(\hat{\theta} - \theta))$ (upper bounded by), this is from the defintion of local minima & convexity of $D$
+      - $\epsilon(\hat{\theta} - \theta)$ is basically $\beta_{\epsilon}(\theta)$
+    - We simplify this: $f(\theta)\leq f(\epsilon\hat{\theta} + (1-\epsilon) \theta)$
+    - assume $f$ is convex: $f(\theta) \leq \epsilon f(\hat{\theta}) + (1-\epsilon)f(\theta)$ 
+      - Based on previous definition
+    - Rewrite the equation: $f(\theta) - (1-\epsilon)f(\theta) \leq \epsilon f(\hat{\theta})$
+    - Reduce the equation: $\epsilon f(\theta) \leq \epsilon f(\hat{\theta})$
+    - Remove $\epsilon$, $f(\theta) \leq f(\hat{\theta})$
+      - This covers all domain of $D$. And thus, this proves that a convex function has a global minimum
+- More examples of convex function
+  - $f(z) = \vert\vert z\vert\vert^2$
+  - $e^2$, $e^{-z}$
+  - $log \sum^d_{n=1}e^{z_n}$, $-logz$
+  - $-\sqrt{z}$
+  - $z^\top{a+b}$ (affine transformation)
+- if $f_1...f_L$ are convex functions on D, then so are:
+  - $f(\theta) = \sum \lambda_{n} f_n(\theta)$ iff $\lambda_{1}...\lambda_{n} \geq 0$
+  - $f(\theta) = max f_n(\theta)$
+- if $g$ is a convex function and $h$ is affine, then $f(\theta) = g(h(\theta))$ is also convex. 
+  - affine = Linear + offset. $h(\theta) = a^\top\theta+b$
+  - Basiically Least square regression or loss is convex
+    - $f(\theta) = \frac{1}{n}\sum^n_{t=1}(\theta^\top x_n - y_n)^2$
+    - $\theta^\top x_n - y_n$ is convex
+    - $(.)^2$ is also affine
+    - sum of convex function $\sum^n_{t=1}.$ is also affine
+    - thus, least square is affine as long as $1/n$ is positive
+- equivalent defs
+  - $0^{th}$

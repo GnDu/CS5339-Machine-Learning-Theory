@@ -1,0 +1,118 @@
+# Lecture 4 - Margin SVM
+
+## Towards Support Vector Machine
+- Previously we learn about linear classification
+- In order to learn, we would like to minimise the number of mistakes, $k$.
+- $k$ is depends on $\gamma$, $R$ and $d$
+  - We learn that we cannot increase $R$ without increasing $\gamma$.
+  - Decreasing $d$ works as well but intuitively, you may lose 'expressivity' / 'flexibility'.
+  - Another way is to incresae $\gamma$ which is what we will be focusing on. 
+- We would like to maximise $\gamma$ in order to minimise the number of mistakes.
+  - $\underset{\gamma}{argmax}\ y_t(\theta^*)^\top x_t \geq \gamma\ \forall t=1,...,n$
+  - equvalent to $\gamma = \underset{t=1,...,n}{min} y_t(\theta^*)^\top x_t$
+    - Basically, you want to find the maximum $\gamma$ that the linaer classification can work on all of its examples (basically no mistakes)
+    - This in turn, $\gamma$ needs to be the minimum for all of its values in $x_t, y_t$?
+- Claim: for any $\theta$ separating $+1$ and $-1$, $\gamma_{geom} = \frac{\gamma}{\Vert \theta\Vert}$ is the the smallest distance from any $x_t$ to the decision boundary. $geom$ here means geometric margin.
+  - Infinitely possible $\theta$ that can separate the data points.
+  - Proof $\frac{y_t\theta^\top x_t}{\|\theta\|}$ is distance from $x_t$ to decision boundary $\theta$
+  - Rememeber  $\gamma = \underset{t=1,...,n}{min} y_t(\theta^*)^\top x_t$, if we can prove that $\frac{y_t\theta^\top x_t}{\|\theta\|}$ is the distance of $x_t$ to the decision boundary, then we can solve $\gamma$
+  - Proof that the distance is indeed $\frac{y_t\theta^\top x_t}{\|\theta\|}$. Let's define $z_t = x_t - y_ts\frac{\theta}{\|\theta\|}$ 
+    - $\frac{\theta}{\|\theta\|}$: the direction from the decision boundary to $x_t$
+    - $s$: a scalar to represent the magnitiude or actual distance. This cannot be too small or too big else it will undershoot or overshoot.
+    - $y_t$: this is the actual label which is used to control how to move x_t to the decision boundary. If $x_t$ is $+1$, then it moves towards the _opposite_ direction because of $-y_t = -1$ and vice versa.
+    - We need to choose $s$ s.t it is exactly on the boundary.
+    - Thus, we can write it as such: $\theta^\top z_t=0$
+      - Remember cosine similarity? 
+    - Now we add $y_t\theta^\top z_t=0$
+    - Sub $z_t$: $y_t\theta^\top (x_t - y_ts\frac{\theta}{\|\theta\|})=0$
+      - $y_t\theta^\top x_t - y_t^2s\frac{\theta^\top\theta}{\|\theta\|} = 0$
+    - Now simplify: $y_t\theta^\top x_t - s \|\theta\| = 0$
+      - Because $y_t^2$ is basically $1$
+      - and $\theta^\top\theta=\|\theta\|^2$
+    - $y_t\theta^\top x_t = s \|\theta\|$
+    - $s = \frac{y_t\theta^\top x_t}{\|\theta\|}$
+      - Viola, we have proven it.
+  - Now remember $k_{max} \leq \frac{R^2\|\theta^*\|^2}{\gamma^2} = \frac{R^2}{\gamma_{geom}^2}$
+    - Because of the definition of $\gamma_{geom}$
+    - Lower $\gamma_{geom}$ make it harder. Bigger allow smaller number of mistakes.
+- Question: does the distance, $\gamma_{geom}=\frac{\gamma}{\|\theta\|}$ depends on $\|\theta\|$?
+  - Strangely no. The decision boundary is more dependent on the _direction_ of $\theta$ not the norm (magnitude)
+  - Stricly, because of $sign(\theta^\top x)$ which depends on the cosine similarity between $\theta$ and  $x$
+  - But the $\gamma_{geom}$ still depends on $\|\theta\|$ 
+  - Let's expand accordingly: $\gamma_{geom}=\frac{\gamma}{\|\theta\|}$
+    - $\frac{\gamma}{\|\theta\|} = \frac{\underset{t}{min}\ y_t\theta^\top x_t}{\|\theta\|}$
+    - Now we apply cosine similarity again: $\frac{\underset{t}{min}\ y_t \|\theta\| \|x_t\| cos(angle(\theta,x_t))}{\|\theta\|}$
+    - Bring $\|\theta\|$ out and remove cancel out:$\underset{t}{min}\ y_t  \|x_t\| cos(angle(\theta,x_t))$ 
+      - This means that $\gamma$ already incorporate $\|\theta\|$ and thus does not depend on it.
+      - Consider that $cos(angle(\theta,x_t)=[-1,1]$
+      - If  $cos(angle(\theta,x_t)\approx 0$ (very, near) then we can see that $\gamma_{geom}$ will be very small for. If $y_t=-1$, the cosine similarity will be negative too (going away from $\theta$) and thus, $\gamma_{geom}$ will be small and positive too.
+- Now, we wish to find $\theta$ such that $\gamma_{geom}$ is as large as possible.
+  - Maximsing $\gamma_{geom}$ is more robust against noise because the decision margin is large.
+  - Generalisationfor future points
+  - Formalisation: $\underset{\theta, \gamma>0}{max}\ \frac{\gamma}{\|\theta\|}$ s.t $y_t\theta^\top x_t \geq \gamma, \forall t=1,...,n$
+  - Change this to a minimization problem: $\underset{\theta, \gamma>0}{min}\ \frac{\|\theta\|}{\gamma}$ s.t $y_t\theta^\top x_t \geq \gamma, \forall t=1,...,n$
+  - Now we divide $\gamma$ on the constraint: 
+    - $y_t\theta^\top x_t \geq \gamma$
+    -  $y_t(\frac{\theta}{\gamma})^\top x_t \geq 1$
+    -  So we have: $\underset{\theta, \gamma>0}{min}\ \frac{\|\theta\|}{\gamma}$ s.t $y_t(\frac{\theta}{\gamma})^\top x_t \geq 1 \forall t=1,...,n$
+  - Since $\gamma$ is a scalar, we merge it with norm:
+    - $\underset{\theta, \gamma>0}{min}\ \|\frac{\theta}{\gamma}\|$ s.t $y_t(\frac{\theta}{\gamma})^\top x_t \geq 1 \forall t=1,...,n$   
+  - Solving for mutivariable is a pain (and also typing it), let $\tilde{\theta} = \frac{\theta}{\gamma}$, we have:
+    - $\underset{\theta, \gamma>0}{min}\ \|\tilde{\theta}\|$ s.t $y_t\tilde{\theta}^\top x_t \geq 1 \forall t=1,...,n$
+  - Now we make it more differentiable by squaring the function, it does not change the minimization function:
+    - $\underset{theta, \gamma>0}{min}\ \frac{1}{2}\|\tilde{\theta}\|^2$ s.t $y_t\tilde{\theta}^\top x_t \geq 1 \forall t=1,...,n$ 
+    - $\|\tilde{\theta}\|$ is an absolute function, not smmoth at all. Squaring it make it into a quadratic function.
+  - This is a special case of support vector machine with hard constraints and no offset.
+- Claim: for any linearly separable D, solving the optimization returns $\tilde{\theta}$ with the highest margin with margin = $\frac{1}{\|\tilde{\theta}\|}$
+  - margin is defined as such because we are minimising  $\tilde{\theta}$. Once we find the minimum, we are maximising $\frac{1}{\tilde{\theta}}$ because of our transformation above.
+  - So why? Because the initial problem while solvable does not behave nice (basically a pain in the ass to solve)
+  - Transforming it into a SVM make it into a convex optimisation problem!
+    -  $\underset{theta, \gamma>0}{min}\ \frac{1}{2}\|\tilde{\theta}\|^2$ is a convex function because it's quadratic. 
+    -   $y_t\tilde{\theta}^\top x_t \geq 1 \forall t=1,...,n$ is an affine function on the domain. (need to change `Lecture 2` for this.)
+    - Convex optimisation - you have a convex function with a affine domain!
+-  Question: what if $D$ is non-linearly separable?
+   -  the optimisation problem will fail. Strictly, infeasible.
+   -  Basically, there can be no $\tilde{\theta}$ that satsifies the constraint: $y_t\tilde{\theta}^\top x_t \geq 1 \forall t=1,...,n$
+   -  Remember that the constraint indicates that $\theta$ can make no mistakes and that constraint is under the assumption of linear separability.
+   -  If the constraint is violated, then the whole thing becomes infeasible.
+   -  Question: how to square this away with real world problem? Simple: Assume the the data is linearly seperable!!
+
+## More general SVM
+
+- Linear classification with offset
+- $f(x) = sign(\theta^\top x + \theta_{0})$
+  - We are gonna learn $\theta$ and $\theta_0$ from $D$
+  - We can maximise margin more and therefore better against input robustness and generalisation.
+  - Some properties:
+    - Offset also helps with the $x_t=0$ problem because $sign(\theta^\top x) = 0$, however with offset, it becomes $sign(\theta^\top x + \theta_0) = sign(\theta_0)=0$
+    - Adding offset does not change the direction of $\theta$, it's perpendicular to decision boundary.
+- Calculating margin: $\frac{\underset{t}{min}\ y_t(\theta^\top x_t + \theta_0)}{\|\theta\|} = \gamma_{geom}$
+  - using the same constraints: $y_t(\theta^\top x_t + \theta_0) \geq \gamma$
+  - shortest path from any $x_t$ is still the shortest distance from $\theta$: $x_t - y_ts\frac{\theta}{\|\theta\|}$.
+    - Note: no $\theta_0$ because this not depend on the offset. 
+- Now maximising the margin, $\gamma_{geom}$ which after the same long ardous process:
+  - $\underset{\theta, \theta_0}{min}\ \frac{1}{2}\|\theta\|^2$ s.t $y_t(\theta^\top x_t + \theta_0) \geq 1 \forall t=1,...,n$ 
+  - again $\theta_0$ does not appear on the objective function because during the derivation, the objective function does is derived from the distance.
+- We can include $\theta_0$ if we re-parametize: 
+  - $\tilde{x} = \begin{bmatrix} x \\
+  1
+  \end{bmatrix}$ and $\tilde{\theta}=\begin{bmatrix}\theta \\ \theta_0\end{bmatrix}$
+  - Then $sign(\theta^\top x + \theta_0) = sign(\tilde{\theta}^\top \tilde{x})$
+  - Therefore this offset model becomes one without offset.
+  - Then we apply it as usual.
+  - This is tempting but we will need to minimise $\theta_0$ as well: $|\tilde{\theta}\|^2 \rightarrow |\theta\|^2 + \theta_0^2$
+  - What will happen is this penalises the decision boundary to be as close to origin $\rightarrow$ unneccessary optimisation?
+  - We regularise the $\theta$ but not the offset.
+  - Soemtime, it is okay but it depends but in this case based on our geometric defintion, it may not be wise.
+- Question: 1:38:30
+
+## What is Support Vector
+
+- We have a decision boundary, margin, and data points.
+- Some data points will be on the edge of the margin. These data points are **support vectors**.
+- Data points not on the margin, are not support vectors.
+- Claim: If we define a new dataset, $D'$ where it only contains all support vectors from $D$, we get the same _solution_
+  - Implication: We know which points are important, intepretability
+  - Compression: your model will only need to contain support vectors. 
+    - This also affect generalisation as lower points =  better generalisation.
+    - There is also generalisation bound that depends on compression.

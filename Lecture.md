@@ -19,6 +19,9 @@
   - [Towards Support Vector Machine](#towards-support-vector-machine)
   - [More general SVM](#more-general-svm)
   - [What is Support Vector](#what-is-support-vector)
+- [Lecture 5 - Margin NN](#lecture-5---margin-nn)
+  - [Margin in Modern ML](#margin-in-modern-ml)
+  - [More to come](#more-to-come)
 
 # Lecture 1: Optimisation 1
 
@@ -622,3 +625,61 @@
   - Compression: your model will only need to contain support vectors. 
     - This also affect generalisation as lower points =  better generalisation.
     - There is also generalisation bound that depends on compression.
+
+# Lecture 5 - Margin NN
+
+- $\frac{\underset{t}{min}\ y_t\theta^\top x_t}{\|\theta\|}$ is a non-convex problem.
+- SVM formulation in the previous lecture is a convex optimisation.
+- 1 hidden trick that scientist hate! $Problem \rightarrow Convex\ Optimisation \rightarrow Q.E.D$
+  - can solve efficiently without suffering from curse of dimensionality
+  - A lot of efficient solvers. 
+  - Many research is really translating problems into a problem of convex optimisation, including SVM
+
+## Margin in Modern ML
+
+- (possibly non-linear) binary classifier: $f(x) = sign(h(x))$ where $h(x)$ is a general function.
+- the notion of margin: $x_t$ is the minimum distance between $x_t$ and decision boundary
+- If $h(x)$ is non-linear, your boundary line is not linear.
+  - ![](images/non-linear.jpeg)
+  - But what does not change is that points on the boundary is still $h(x)=0$
+- So now formalise the distance:
+  - $\underset{\delta}{min}\ \|\delta\|$ s.t. $h(x_t + \delta)=0$
+    - $x_t$ is perturbed ($x_t + \delta$) to the decision boundary such that it is 0
+    - Problem is, infinite $\delta$ to push $x_t$ to boundary
+  - But there is no closed version for non-linear $h$
+    - Addressed in Neurips 2018: "Large Margin deep network for classifier" (use multi-class but the following below is only for binary)
+      - Linear approximation$h$: $h(x+\delta) \approxeq h(x) + \nabla h(x)^\top \delta$ using taylor approximation
+      - With the non-linear formulation we have earlier: $\underset{\delta}{min} \|\delta\|$ s.t $h(x_t + \delta)=0$ (non-linear in $\delta$)
+      - We sub the constraint: $\tilde{\gamma}_{geom} = \underset{\delta}{min} \|\delta\|$ s.t $h(x) + \nabla h(x)^\top \delta=0$ (linear in $\delta$)
+      - Now we can solve in closed form: $\tilde{\gamma}_{geom} = \frac{\vert h(x_t)\vert}{\|\nabla h(x_t)\|}$
+      - Then we can maximise the approximatte margin, \tilde{\gamma}_{geom}$ for deep net $h$
+        - Improved data efficiency: generalise from small training data 
+        - Improved robustness from adversary examplies.
+      - Note: no linear approximation for $f(x)$. Linear approximation _only_ for $\tilde{\gamma}_{geom}$
+- $\tilde{\gamma}_{geom} = \frac{\vert h(x_t)\vert}{\|\nabla h(x_t)\|}$ This is linear approximation of margin for non-linear models. Now, does this apply for linear models?
+  - $h(x) = \theta^\top x_t$
+  - $\nabla h(x) = \theta$
+  - We sub those in: $\tilde{\gamma}_{geom} = \frac{\vert\theta^\top x_t\vert}{\|\theta\|}$
+  - Assume correct prediction, $f(x_t)=sign(\theta^\top x_t)=y_t$ then we can remove the absolute function:
+    - $\tilde{\gamma}_{geom} = \frac{y_t\theta^\top x_t}{\|\theta\|}$
+    - Because if $\theta^\top x_t<0$ and the prediction is correct, $y_t=-1$, then it still fits the absolute function. Likewise if $\theta^\top x_t>0$
+  - And this is basically $\gamma_{geom}$! Why?
+    - The linear approximation is exact for linear models.
+    - And because of the linear assumption.
+- Now, we wish to maximise margin for semi-supervised learning.
+  - We have $D=\{(x_t, y_t)\}^n_{t=1}$ known as the labeled dataset.
+  - We have also $\overline{D}=\{\overline{x}_t\}^m_{t=1}$ known as unlabelled dataset
+  - We want to use both $D$ and $\overline{D}$ to learn a classifier.
+  - We want to maximise margin for unlabelled data points by maximising margin for all datapoints, unlabelled or not.
+    - Basically, we want to create a decision boundary that cleanly seperate the data into two partitions regardless of their label.
+    - Unsupervised learning for 
+  
+## More to come 
+
+- Linear models are building blocks to non-linear models
+- May not apply to deep net...NOT. 
+  - Last layer is typically a linear model. 
+  - Last layer re-training for spurious corrleation (SOTA 2022)
+  - Hidden layers have activation function that has similar to roles to $sign$
+    - $tanh$ for physics for sinusodial.
+    - $ReLu$ for NLP and vision.
